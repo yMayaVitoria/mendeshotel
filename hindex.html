@@ -1,0 +1,661 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MENDES | Gestão Hoteleira</title>
+<style>
+:root{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#1b2d46;background:#f3f6fb}
+*{box-sizing:border-box}
+body{margin:0}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+aside{position:fixed;inset:0 auto 0 0;width:245px;background:#142b4b;color:white;padding:24px 14px;overflow:auto}
+aside h2{margin:0 10px 2px;font-size:21px}
+aside small{display:block;margin:0 10px 30px;color:#adc5e6}
+nav button{width:100%;display:block;text-align:left;border:0;background:transparent;color:#d5e3f7;padding:13px 15px;border-radius:10px;margin:3px 0}
+nav button.active,nav button:hover{background:#2c527e;color:white}
+main{margin-left:245px;padding:28px;max-width:1700px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+.top h1{margin:0;font-size:26px}
+.muted{color:#71829a;font-size:13px}
+.card{background:white;border:1px solid #e4eaf3;border-radius:15px;padding:20px;box-shadow:0 3px 12px #142b4b08;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat b{font-size:32px;display:block;margin-top:9px;color:#194b83}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.btn{border:0;border-radius:9px;padding:10px 15px;background:#245c99;color:white}
+.btn.secondary{background:#e9f1fb;color:#194b83}
+.btn.danger{background:#fce7e7;color:#a72b2b}
+.btn.green{background:#147a61}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{width:100%;border:1px solid #d8e1ed;border-radius:8px;padding:10px;background:white;color:#1b2d46}
+label{font-size:13px;font-weight:600;display:block;margin-bottom:5px}
+.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.field.wide{grid-column:span 2}
+.field.full{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #e9edf3}
+th{color:#60748d;background:#f8fafd}
+table button{margin:2px}
+.tablewrap{overflow:auto}
+.pill{display:inline-block;padding:5px 9px;border-radius:30px;background:#e8f0fa;color:#275a93;font-size:12px}
+.pill.ocupado{background:#ffeddd;color:#a05a18}
+.pill.limpeza{background:#fff4cb;color:#8a6913}
+.pill.manutencao{background:#fce6e6;color:#b33}
+.pill.disponivel,.pill.confirmada,.pill.finalizada{background:#dff7ed;color:#087854}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px}
+.room{border:1px solid #e0e8f2;border-radius:12px;padding:15px;background:#fff;text-align:left}
+.room strong{font-size:20px;display:block;margin-bottom:8px}
+.room:hover{border-color:#3975b8}
+.hide{display:none!important}
+dialog{border:0;border-radius:16px;padding:0;max-width:780px;width:calc(100% - 30px);box-shadow:0 20px 90px #0005}
+dialog::backdrop{background:#10243a99}
+.modalhead{padding:18px 22px;background:#f5f8fd;border-bottom:1px solid #e5eaf2}
+.modalbody{padding:22px;max-height:70vh;overflow:auto}
+.notice{padding:12px;border-radius:9px;background:#eaf3fc;margin:8px 0;color:#29557d}
+.empty{padding:25px;text-align:center;color:#7b8ba0}
+.section{display:none}
+.section.show{display:block}
+@media(max-width:950px){
+aside{position:static;width:100%;padding:12px}
+aside small{margin-bottom:10px}
+nav{display:flex;overflow:auto}
+nav button{white-space:nowrap;width:auto}
+main{margin:0;padding:15px}
+.stats{grid-template-columns:repeat(2,1fr)}
+.grid{grid-template-columns:1fr}
+.fields{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:520px){
+.stats,.fields{grid-template-columns:1fr}
+.field.wide{grid-column:span 1}
+.top{align-items:start;flex-direction:column}
+}
+</style>
+</head>
+<body>
+<aside>
+<h2>🏨 MENDES</h2>
+<small>Sistema de Gestão Hoteleira</small>
+<nav id="nav"></nav>
+<p class="muted" style="color:#9bb5d3;margin:25px 12px">Versão local • Dados salvos neste navegador</p>
+</aside>
+
+<main>
+<div class="top">
+<div>
+<h1 id="pageTitle">Painel de controle</h1>
+<span class="muted" id="today"></span>
+</div>
+<div class="row">
+<span class="pill">● Sistema local</span>
+<button class="btn secondary" onclick="backup()">Exportar backup</button>
+</div>
+</div>
+
+<section id="inicio" class="section show">
+<div class="stats" id="stats"></div>
+<div class="grid" style="margin-top:18px">
+<div class="card">
+<div class="row between">
+<h3>Próximas entradas</h3>
+<button class="btn secondary" onclick="go('reservas')">Ver reservas</button>
+</div>
+<div id="upcoming"></div>
+</div>
+<div class="card">
+<div class="row between">
+<h3>Saídas previstas</h3>
+<button class="btn secondary" onclick="go('checkout')">Check-out</button>
+</div>
+<div id="departures"></div>
+</div>
+</div>
+<div class="card">
+<h3>Mapa de quartos</h3>
+<div id="homeRooms" class="rooms"></div>
+</div>
+</section>
+
+<section id="hospedes" class="section">
+<div class="card">
+<div class="row between">
+<h3>Cadastro de hóspedes</h3>
+<button class="btn" onclick="guestForm()">+ Novo hóspede</button>
+</div>
+<input id="guestSearch" placeholder="Pesquisar por nome, CPF, telefone ou documento" oninput="renderGuests()">
+<div class="tablewrap" id="guestTable"></div>
+</div>
+</section>
+
+<section id="reservas" class="section">
+<div class="card">
+<div class="row between">
+<h3>Reservas</h3>
+<button class="btn" onclick="reservationForm()">+ Nova reserva</button>
+</div>
+<input id="reservationSearch" placeholder="Pesquisar hóspede, número da reserva ou quarto" oninput="renderReservations()">
+<div class="tablewrap" id="reservationTable"></div>
+</div>
+</section>
+
+<section id="checkin" class="section">
+<div class="card">
+<h3>Check-in — Entradas</h3>
+<p class="muted">Confirme a chegada de reservas com quarto disponível e liberado.</p>
+<div id="checkinTable" class="tablewrap"></div>
+</div>
+</section>
+
+<section id="checkout" class="section">
+<div class="card">
+<h3>Check-out — Saídas</h3>
+<p class="muted">Confira consumos, pagamentos e finalize a hospedagem.</p>
+<div id="checkoutTable" class="tablewrap"></div>
+</div>
+</section>
+
+<section id="quartos" class="section">
+<div class="card">
+<div class="row between">
+<h3>Quartos e disponibilidade</h3>
+<button class="btn" onclick="roomForm()">+ Adicionar quarto</button>
+</div>
+<div id="roomGrid" class="rooms"></div>
+</div>
+</section>
+
+<section id="limpeza" class="section">
+<div class="card">
+<h3>Controle de limpeza e manutenção</h3>
+<div id="cleanTable" class="tablewrap"></div>
+</div>
+</section>
+
+<section id="financeiro" class="section">
+<div class="stats" id="financialStats"></div>
+<div class="card" style="margin-top:18px">
+<div class="row between">
+<h3>Lançamentos financeiros</h3>
+<button class="btn" onclick="financeForm()">+ Registrar lançamento</button>
+</div>
+<div id="financeTable" class="tablewrap"></div>
+</div>
+</section>
+
+<section id="relatorios" class="section">
+<div class="card">
+<h3>Relatórios e exportação</h3>
+<div class="row">
+<button class="btn" onclick="exportCSV('hospedes')">Exportar hóspedes (CSV)</button>
+<button class="btn" onclick="exportCSV('reservas')">Exportar reservas (CSV)</button>
+<button class="btn" onclick="exportCSV('financeiro')">Exportar financeiro (CSV)</button>
+<button class="btn secondary" onclick="window.print()">Imprimir relatório</button>
+</div>
+<div id="reportContent" style="margin-top:22px"></div>
+</div>
+</section>
+
+<section id="configuracoes" class="section">
+<div class="card">
+<h3>Configurações do hotel</h3>
+<form id="settingsForm" class="fields">
+<div class="field"><label>Nome do hotel</label><input name="hotel" required></div>
+<div class="field"><label>Moeda</label><input value="BRL (R$)" disabled></div>
+<div class="field"><label>Horário padrão de check-in</label><input name="inTime" type="time"></div>
+<div class="field"><label>Horário padrão de check-out</label><input name="outTime" type="time"></div>
+<div class="field"><label>Nome do atendente</label><input name="attendant"></div>
+<div class="field full"><button class="btn">Salvar configurações</button></div>
+</form>
+</div>
+<div class="card">
+<h3>Restaurar backup</h3>
+<input type="file" accept="application/json" onchange="restore(event)">
+<p class="muted">A restauração substitui os dados atuais. Guarde backups em local seguro.</p>
+</div>
+</section>
+</main>
+
+<dialog id="modal">
+<div class="modalhead row between">
+<h3 id="modalTitle" style="margin:0"></h3>
+<button class="btn secondary" onclick="document.getElementById('modal').close()">✕ Fechar</button>
+</div>
+<div class="modalbody" id="modalBody"></div>
+</dialog>
+
+<script>
+window.addEventListener('error', function(e) {
+  let box = document.getElementById('fatalError');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'fatalError';
+    box.style.cssText = 'position:fixed;z-index:99999;inset:12px;background:#fff0f0;color:#8b1e1e;padding:20px;border:2px solid #c33;border-radius:10px;overflow:auto;font:14px/1.5 Arial';
+    document.body.appendChild(box);
+  }
+  box.innerHTML = '<h2>Erro ao carregar o sistema</h2><p>' +
+    String(e.message || 'Erro JavaScript') + '</p><p>Linha: ' + e.lineno +
+    '</p><p>Feche esta mensagem e verifique o código indicado.</p>';
+});
+
+const KEY='hotel_manager_v1';
+const iso=()=>{
+const d=new Date();
+return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+};
+const initial=()=>({
+guests:[],
+rooms:[101,102,103,104,105,106,201,202,203,204,205,206].map((number,i)=>({
+id:String(number),
+number:String(number),
+category:i>=6?'Luxo':'Standard',
+capacity:i>=6?3:2,
+rate:i>=6?290:180,
+status:i===5?'manutencao':'disponivel'
+})),
+reservations:[],
+transactions:[],
+settings:{hotel:'MENDES',inTime:'14:00',outTime:'12:00',attendant:''}
+});
+
+let db;
+try{
+db=JSON.parse(localStorage.getItem(KEY))||initial();
+if(!db||!Array.isArray(db.guests)||!Array.isArray(db.rooms)||!Array.isArray(db.reservations)||!Array.isArray(db.transactions)||!db.settings)db=initial();
+}catch{db=initial()}
+
+if(db.settings&&db.settings.hotel==='HOTEL MANAGER'){
+db.settings.hotel='MENDES';
+localStorage.setItem(KEY,JSON.stringify(db));
+}
+
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(db));render()};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+const days=(a,b)=>Math.max(1,Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000));
+const name=id=>db.guests.find(g=>g.id===id)?.name||'Hóspede excluído';
+const room=id=>db.rooms.find(r=>r.id===id);
+const rid=()=>String(Date.now())+Math.random().toString(36).slice(2,6);
+const opt=(items,selected)=>items.map(([v,t])=>`<option value="${esc(v)}" ${String(v)===String(selected)?'selected':''}>${esc(t)}</option>`).join('');
+const field=(label,key,value='',type='text',required=false)=>`<div class="field"><label>${label}</label><input name="${key}" type="${type}" value="${esc(value)}" ${required?'required':''}></div>`;
+const select=(label,key,options,value)=>`<div class="field"><label>${label}</label><select name="${key}" required>${opt(options,value)}</select></div>`;
+const actions=html=>`<div class="field full row">${html}</div>`;
+
+function form(title,html,fn){
+$('modalTitle').textContent=title;
+$('modalBody').innerHTML=`<form id="editForm" class="fields">${html}</form>`;
+$('modal').showModal();
+$('editForm').onsubmit=e=>{
+e.preventDefault();
+fn(Object.fromEntries(new FormData(e.target)));
+};
+}
+
+function closeSave(){
+$('modal').close();
+save();
+}
+
+function table(headers,rows){
+return rows.length
+?`<table><thead><tr>${headers.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+:'<div class="empty">Nenhum registro encontrado.</div>';
+}
+
+function go(id){
+document.querySelectorAll('.section').forEach(s=>s.classList.toggle('show',s.id===id));
+document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+$('pageTitle').textContent=pages.find(p=>p[0]===id)[1];
+render();
+}
+
+const pages=[
+['inicio','Painel de controle','▦'],
+['hospedes','Hóspedes','♙'],
+['reservas','Reservas','▤'],
+['checkin','Check-in','↘'],
+['checkout','Check-out','↗'],
+['quartos','Quartos','▦'],
+['limpeza','Limpeza','✧'],
+['financeiro','Financeiro','＄'],
+['relatorios','Relatórios','▥'],
+['configuracoes','Configurações','⚙']
+];
+
+$('nav').innerHTML=pages.map(([id,title,icon])=>`<button data-page="${id}" onclick="go('${id}')">${icon} &nbsp; ${title}</button>`).join('');
+$('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+function status(s){
+return `<span class="pill ${esc(s)}">${({disponivel:'Disponível',ocupado:'Ocupado',limpeza:'Aguardando limpeza',manutencao:'Manutenção',confirmada:'Confirmada',hospedado:'Hospedado',finalizada:'Finalizada',cancelada:'Cancelada'}[s]||esc(s))}</span>`;
+}
+
+function conflicts(r,exclude){
+return db.reservations.some(x=>x.id!==exclude&&x.roomId===r.roomId&&['confirmada','hospedado'].includes(x.status)&&r.start<x.end&&r.end>x.start);
+}
+
+function guestForm(id){
+let g=db.guests.find(x=>x.id===id)||{};
+form(id?'Editar hóspede':'Novo hóspede',
+field('Nome completo','name',g.name,'text',true)+
+field('CPF / Passaporte','document',g.document)+
+field('RG','rg',g.rg)+
+field('Data de nascimento','birth',g.birth,'date')+
+select('Gênero','gender',[['','Não informado'],['Feminino','Feminino'],['Masculino','Masculino'],['Outro','Outro'],['Prefiro não informar','Prefiro não informar']],g.gender)+
+field('Nacionalidade','nationality',g.nationality)+
+field('Telefone','phone',g.phone,'tel')+
+field('E-mail','email',g.email,'email')+
+field('Endereço','address',g.address)+
+field('Acompanhantes / documentos','companions',g.companions)+
+field('Necessidade de acessibilidade','accessibility',g.accessibility)+
+`<div class="field full"><label>Observações</label><textarea name="notes">${esc(g.notes)}</textarea></div>`+
+actions('<button class="btn">Salvar hóspede</button>'),
+v=>{
+if(v.document&&db.guests.some(x=>x.id!==id&&x.document===v.document)){
+alert('Documento já cadastrado.');
+return;
+}
+if(id)Object.assign(g,v);
+else db.guests.push({...v,id:rid()});
+closeSave();
+});
+}
+
+function renderGuests(){
+let q=$('guestSearch').value.toLowerCase();
+$('guestTable').innerHTML=table(['Nome','Documento','Telefone','Hospedagens','Ações'],
+db.guests.filter(g=>[g.name,g.document,g.phone].some(v=>String(v||'').toLowerCase().includes(q))).map(g=>[
+esc(g.name),esc(g.document),esc(g.phone),
+db.reservations.filter(r=>r.guestId===g.id&&r.status==='finalizada').length,
+`<button class="btn secondary" onclick="guestForm('${g.id}')">Editar</button>`
+]));
+}
+
+function reservationForm(id){
+if(!db.guests.length||!db.rooms.length){
+alert('Cadastre um hóspede e um quarto antes de criar uma reserva.');
+return;
+}
+let tomorrow=new Date();
+tomorrow.setDate(tomorrow.getDate()+1);
+let r=db.reservations.find(x=>x.id===id)||{
+start:iso(),
+end:tomorrow.getFullYear()+'-'+String(tomorrow.getMonth()+1).padStart(2,'0')+'-'+String(tomorrow.getDate()).padStart(2,'0'),
+adults:1,children:0,status:'confirmada'
+};
+if(id&&r.status!=='confirmada'){
+alert('Apenas reservas confirmadas podem ser editadas.');
+return;
+}
+form(id?'Editar reserva':'Nova reserva',
+select('Hóspede','guestId',db.guests.map(g=>[g.id,g.name]),r.guestId)+
+select('Quarto','roomId',db.rooms.map(x=>[x.id,`${x.number} • ${x.category} • ${money(x.rate)}/noite`]),r.roomId)+
+field('Entrada','start',r.start,'date',true)+
+field('Saída prevista','end',r.end,'date',true)+
+field('Adultos','adults',r.adults,'number',true)+
+field('Crianças','children',r.children,'number')+
+field('Valor da diária (R$)','rate',r.rate??room(r.roomId)?.rate??180,'number',true)+
+field('Desconto (R$)','discount',r.discount||0,'number')+
+field('Atendente','attendant',r.attendant||db.settings.attendant)+
+`<div class="field full"><label>Observações</label><textarea name="notes">${esc(r.notes)}</textarea></div>`+
+actions('<button class="btn">Salvar reserva</button>'),
+v=>{
+let rm=room(v.roomId);
+v.adults=Number(v.adults);
+v.children=Number(v.children);
+v.rate=Number(v.rate);
+v.discount=Number(v.discount);
+if(!rm){alert('Selecione um quarto válido.');return}
+if(v.end<=v.start){alert('A saída deve ser posterior à entrada.');return}
+if(v.adults<1||v.children<0){alert('Informe a quantidade válida de hóspedes.');return}
+if(v.adults+v.children>rm.capacity){alert('Capacidade máxima do quarto: '+rm.capacity);return}
+if(rm.status==='manutencao'||(rm.status==='ocupado'&&r.roomId!==rm.id)){
+alert('Quarto indisponível.');
+return;
+}
+if(conflicts({...v,roomId:String(v.roomId)},id)){
+alert('Já existe uma reserva ou hospedagem neste quarto para esse período.');
+return;
+}
+v.roomId=String(v.roomId);
+if(id)Object.assign(r,v);
+else db.reservations.push({...v,id:rid(),status:'confirmada',createdAt:new Date().toISOString(),extras:[]});
+closeSave();
+});
+}
+
+function total(r){
+return Math.max(0,days(r.start,r.end)*Number(r.rate)-Number(r.discount||0)+((r.extras||[]).reduce((s,x)=>s+Number(x.amount),0)));
+}
+
+function paid(r){
+return db.transactions.filter(t=>t.reservationId===r.id&&t.type==='receita').reduce((s,t)=>s+Number(t.amount),0);
+}
+
+function renderReservations(){
+let q=$('reservationSearch').value.toLowerCase();
+$('reservationTable').innerHTML=table(['Reserva','Hóspede','Quarto','Entrada','Saída','Total previsto','Status','Ações'],
+db.reservations.filter(r=>[r.id,name(r.guestId),room(r.roomId)?.number].some(v=>String(v||'').toLowerCase().includes(q))).map(r=>[
+esc(r.id.slice(-7)),esc(name(r.guestId)),esc(room(r.roomId)?.number),fmt(r.start),fmt(r.end),money(total(r)),status(r.status),
+r.status==='confirmada'
+?`<button class="btn secondary" onclick="reservationForm('${r.id}')">Editar</button><button class="btn danger" onclick="cancelReservation('${r.id}')">Cancelar</button>`
+:`<button class="btn secondary" onclick="details('${r.id}')">Detalhes</button>`
+]));
+}
+
+function cancelReservation(id){
+if(!confirm('Cancelar esta reserva?'))return;
+let r=db.reservations.find(r=>r.id===id);
+if(r)r.status='cancelada';
+save();
+}
+
+function checkIn(id){
+let r=db.reservations.find(x=>x.id===id),rm=room(r.roomId);
+if(!rm||rm.status!=='disponivel'){alert('O quarto precisa estar disponível e liberado.');return}
+if(db.reservations.some(x=>x.id!==id&&x.roomId===r.roomId&&x.status==='hospedado')){
+alert('Este quarto já possui hóspede.');
+return;
+}
+if(!confirm(`Confirmar check-in de ${name(r.guestId)} no quarto ${rm.number}?`))return;
+r.status='hospedado';
+r.checkinAt=new Date().toISOString();
+rm.status='ocupado';
+save();
+}
+
+function checkOut(id){
+let r=db.reservations.find(x=>x.id===id);
+let balance=total(r)-paid(r);
+form('Finalizar check-out',
+`<div class="field full"><div class="notice"><b>${esc(name(r.guestId))}</b> • Quarto ${esc(room(r.roomId)?.number)}<p>Total: ${money(total(r))} | Pago: ${money(paid(r))} | Saldo: <b>${money(balance)}</b></p></div></div>`+
+field('Pagamento adicional (R$)','amount',Math.max(0,balance).toFixed(2),'number')+
+select('Forma de pagamento','method',[['Pix','Pix'],['Dinheiro','Dinheiro'],['Cartão','Cartão'],['Transferência','Transferência']], 'Pix')+
+actions('<button class="btn green">Confirmar check-out</button>'),
+v=>{
+let amount=Number(v.amount);
+if(amount<0||!Number.isFinite(amount)){alert('Valor inválido.');return}
+if(amount+0.001<balance){alert('Existe saldo pendente. Registre o pagamento completo antes de finalizar.');return}
+if(amount>0)db.transactions.push({id:rid(),type:'receita',amount,method:v.method,reservationId:id,description:'Pagamento no check-out',date:iso()});
+r.status='finalizada';
+r.checkoutAt=new Date().toISOString();
+room(r.roomId).status='limpeza';
+closeSave();
+receipt(id);
+});
+}
+
+function extraForm(id){
+form('Adicionar consumo',
+field('Descrição','description','','text',true)+
+field('Valor (R$)','amount','','number',true)+
+actions('<button class="btn">Adicionar</button>'),
+v=>{
+if(Number(v.amount)<0){alert('Valor inválido');return}
+let r=db.reservations.find(r=>r.id===id);
+if(!r)return;
+r.extras=r.extras||[];
+r.extras.push({description:v.description,amount:Number(v.amount)});
+closeSave();
+});
+}
+
+function paymentForm(id){
+form('Registrar pagamento',
+field('Valor (R$)','amount','','number',true)+
+select('Forma','method',[['Pix','Pix'],['Dinheiro','Dinheiro'],['Cartão','Cartão'],['Transferência','Transferência']])+
+actions('<button class="btn">Registrar pagamento</button>'),
+v=>{
+let r=db.reservations.find(x=>x.id===id);
+if(Number(v.amount)<=0||Number(v.amount)>total(r)-paid(r)+0.001){
+alert('Informe um valor positivo até o saldo devido.');
+return;
+}
+db.transactions.push({id:rid(),type:'receita',amount:Number(v.amount),method:v.method,reservationId:id,description:'Pagamento de hospedagem',date:iso()});
+closeSave();
+});
+}
+
+function details(id){
+let r=db.reservations.find(x=>x.id===id);
+if(!r)return;
+$('modalTitle').textContent='Detalhes da hospedagem';
+$('modalBody').innerHTML=`<p><b>Hóspede:</b> ${esc(name(r.guestId))}</p><p><b>Quarto:</b> ${esc(room(r.roomId)?.number)} • ${fmt(r.start)} até ${fmt(r.end)}</p><p><b>Status:</b> ${status(r.status)}</p><p><b>Diárias:</b> ${days(r.start,r.end)} × ${money(r.rate)}</p><p><b>Desconto:</b> ${money(r.discount)}</p><p><b>Consumos:</b> ${(r.extras||[]).map(x=>`${esc(x.description)} (${money(x.amount)})`).join(', ')||'Nenhum'}</p><h3>Total: ${money(total(r))} | Pago: ${money(paid(r))}</h3><div class="row">${r.status==='hospedado'?`<button class="btn" onclick="extraForm('${id}')">+ Consumo</button><button class="btn secondary" onclick="paymentForm('${id}')">+ Pagamento</button>`:''}<button class="btn secondary" onclick="receipt('${id}')">Imprimir recibo</button></div>`;
+$('modal').showModal();
+}
+
+function receipt(id){
+let r=db.reservations.find(x=>x.id===id),w=window.open('','_blank');
+if(!w){alert('Permita pop-ups para imprimir.');return}
+w.document.write(`<html><head><meta charset="utf-8"><title>Recibo de hospedagem</title><style>body{font:16px Arial;max-width:700px;margin:50px auto;line-height:1.8}</style></head><body><h1>${esc(db.settings.hotel)}</h1><h2>Comprovante de hospedagem</h2><p>Reserva: ${esc(r.id)}<br>Hóspede: ${esc(name(r.guestId))}<br>Quarto: ${esc(room(r.roomId)?.number)}<br>Entrada: ${fmt(r.start)}<br>Saída: ${fmt(r.end)}<br>Valor total: ${money(total(r))}<br>Valor recebido: ${money(paid(r))}<br>Saldo: ${money(total(r)-paid(r))}</p><p>Emitido em ${new Date().toLocaleString('pt-BR')}</p><script>window.print()<\/script></body></html>`);
+w.document.close();
+}
+
+function roomForm(id){
+let r=room(id)||{};
+if(id&&r.status==='ocupado'){alert('Não é possível editar um quarto ocupado.');return}
+form(id?'Editar quarto':'Adicionar quarto',
+field('Número','number',r.number,'text',true)+
+select('Categoria','category',[['Standard','Standard'],['Luxo','Luxo'],['Suíte','Suíte'],['Família','Família']],r.category)+
+field('Capacidade de hóspedes','capacity',r.capacity||2,'number',true)+
+field('Diária (R$)','rate',r.rate||180,'number',true)+
+select('Situação','status',[['disponivel','Disponível'],['limpeza','Aguardando limpeza'],['manutencao','Manutenção']],r.status||'disponivel')+
+actions('<button class="btn">Salvar quarto</button>'),
+v=>{
+if(db.rooms.some(x=>x.id!==id&&x.number===v.number)){alert('Número de quarto já cadastrado.');return}
+if(Number(v.capacity)<1||Number(v.rate)<0){alert('Capacidade ou valor inválido.');return}
+if(id){
+if(v.status==='disponivel'&&db.reservations.some(x=>x.roomId===id&&x.status==='hospedado')){alert('Quarto ocupado.');return}
+Object.assign(r,v);
+}else db.rooms.push({...v,id:rid()});
+closeSave();
+});
+}
+
+function setRoom(id,statusValue){
+let r=room(id);
+if(!r)return;
+if(r.status==='ocupado'){alert('Finalize o check-out primeiro.');return}
+r.status=statusValue;
+save();
+}
+
+function roomCards(){
+return db.rooms.map(r=>`<button class="room" onclick="roomForm('${r.id}')"><strong>${esc(r.number)}</strong>${status(r.status)}<p class="muted">${esc(r.category)} • ${r.capacity} pessoas</p><b>${money(r.rate)}/noite</b></button>`).join('');
+}
+
+function financeForm(){
+form('Novo lançamento',
+select('Tipo','type',[['receita','Receita'],['despesa','Despesa']])+
+field('Descrição','description','','text',true)+
+field('Valor (R$)','amount','','number',true)+
+field('Data','date',iso(),'date',true)+
+select('Forma','method',[['Pix','Pix'],['Dinheiro','Dinheiro'],['Cartão','Cartão'],['Transferência','Transferência']])+
+actions('<button class="btn">Salvar lançamento</button>'),
+v=>{
+if(Number(v.amount)<=0){alert('Valor deve ser positivo.');return}
+db.transactions.push({...v,id:rid(),amount:Number(v.amount)});
+closeSave();
+});
+}
+
+function render(){
+let occupied=db.rooms.filter(r=>r.status==='ocupado').length;
+let available=db.rooms.filter(r=>r.status==='disponivel').length;
+let ci=db.reservations.filter(r=>r.status==='confirmada'&&r.start===iso()).length;
+let co=db.reservations.filter(r=>r.status==='hospedado'&&r.end===iso()).length;
+$('stats').innerHTML=[['Quartos disponíveis',available],['Quartos ocupados',occupied],['Check-ins previstos hoje',ci],['Check-outs previstos hoje',co]].map(([t,v])=>`<div class="card stat"><span class="muted">${t}</span><b>${v}</b></div>`).join('');
+$('upcoming').innerHTML=table(['Hóspede','Quarto','Entrada'],db.reservations.filter(r=>r.status==='confirmada').sort((a,b)=>a.start.localeCompare(b.start)).slice(0,6).map(r=>[esc(name(r.guestId)),esc(room(r.roomId)?.number),fmt(r.start)]));
+$('departures').innerHTML=table(['Hóspede','Quarto','Saída'],db.reservations.filter(r=>r.status==='hospedado').sort((a,b)=>a.end.localeCompare(b.end)).slice(0,6).map(r=>[esc(name(r.guestId)),esc(room(r.roomId)?.number),fmt(r.end)]));
+$('homeRooms').innerHTML=roomCards();
+$('roomGrid').innerHTML=roomCards();
+renderGuests();
+renderReservations();
+$('checkinTable').innerHTML=table(['Hóspede','Quarto','Entrada','Saída','Ação'],db.reservations.filter(r=>r.status==='confirmada').map(r=>[esc(name(r.guestId)),esc(room(r.roomId)?.number),fmt(r.start),fmt(r.end),`<button class="btn" onclick="checkIn('${r.id}')">Confirmar entrada</button>`]));
+$('checkoutTable').innerHTML=table(['Hóspede','Quarto','Saída prevista','Saldo','Ações'],db.reservations.filter(r=>r.status==='hospedado').map(r=>[esc(name(r.guestId)),esc(room(r.roomId)?.number),fmt(r.end),money(total(r)-paid(r)),`<button class="btn secondary" onclick="details('${r.id}')">Consumos / pagamentos</button><button class="btn green" onclick="checkOut('${r.id}')">Finalizar saída</button>`]));
+$('cleanTable').innerHTML=table(['Quarto','Situação','Ação'],db.rooms.filter(r=>['limpeza','manutencao'].includes(r.status)).map(r=>[esc(r.number),status(r.status),`<button class="btn green" onclick="setRoom('${r.id}','disponivel')">Liberar quarto</button>`]));
+let revenues=db.transactions.filter(t=>t.type==='receita').reduce((s,t)=>s+Number(t.amount),0);
+let expenses=db.transactions.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount),0);
+$('financialStats').innerHTML=[['Receitas',money(revenues)],['Despesas',money(expenses)],['Saldo',money(revenues-expenses)],['A receber',money(db.reservations.filter(r=>['confirmada','hospedado'].includes(r.status)).reduce((s,r)=>s+total(r)-paid(r),0))]].map(([t,v])=>`<div class="card stat"><span class="muted">${t}</span><b style="font-size:23px">${v}</b></div>`).join('');
+$('financeTable').innerHTML=table(['Data','Descrição','Tipo','Forma','Valor'],db.transactions.slice().reverse().map(t=>[fmt(t.date),esc(t.description),esc(t.type),esc(t.method),money(t.amount)]));
+$('reportContent').innerHTML=`<h3>Resumo operacional</h3><p>Hóspedes cadastrados: <b>${db.guests.length}</b></p><p>Reservas confirmadas: <b>${db.reservations.filter(r=>r.status==='confirmada').length}</b></p><p>Hospedagens em andamento: <b>${db.reservations.filter(r=>r.status==='hospedado').length}</b></p><p>Hospedagens finalizadas: <b>${db.reservations.filter(r=>r.status==='finalizada').length}</b></p><p>Ocupação atual: <b>${db.rooms.length?(occupied/db.rooms.length*100).toFixed(1):0}%</b></p><p>Receitas registradas: <b>${money(revenues)}</b></p>`;
+$('settingsForm').elements.hotel.value=db.settings.hotel;
+$('settingsForm').elements.inTime.value=db.settings.inTime;
+$('settingsForm').elements.outTime.value=db.settings.outTime;
+$('settingsForm').elements.attendant.value=db.settings.attendant;
+}
+
+$('settingsForm').onsubmit=e=>{
+e.preventDefault();
+db.settings=Object.fromEntries(new FormData(e.target));
+save();
+alert('Configurações salvas.');
+};
+
+function download(filename,content,type){
+let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
+a.href=url;
+a.download=filename;
+a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function exportCSV(which){
+let arr=which==='hospedes'?db.guests:which==='reservas'?db.reservations.map(r=>({...r,guestName:name(r.guestId),roomNumber:room(r.roomId)?.number,total:total(r),paid:paid(r)})):db.transactions;
+if(!arr.length){alert('Não há dados para exportar.');return}
+let cols=[...new Set(arr.flatMap(Object.keys))];
+let csv='\ufeff'+[cols.join(';'),...arr.map(x=>cols.map(k=>'"'+String(typeof x[k]==='object'?JSON.stringify(x[k]):x[k]??'').replace(/"/g,'""')+'"').join(';'))].join('\r\n');
+download(which+'.csv',csv,'text/csv;charset=utf-8');
+}
+
+function backup(){
+download('mendes-backup.json',JSON.stringify(db,null,2),'application/json');
+}
+
+async function restore(e){
+let f=e.target.files[0];
+if(!f)return;
+try{
+let data=JSON.parse(await f.text());
+if(!Array.isArray(data.guests)||!Array.isArray(data.rooms)||!Array.isArray(data.reservations)||!Array.isArray(data.transactions)||!data.settings)throw Error();
+if(!confirm('Substituir todos os dados atuais pelo backup?'))return;
+db=data;
+save();
+alert('Backup restaurado.');
+}catch{alert('Arquivo de backup inválido.')}
+e.target.value='';
+}
+
+try{
+go('inicio');
+}catch(err){
+document.body.insertAdjacentHTML('afterbegin','<div style="position:fixed;z-index:99999;inset:12px;background:#fff0f0;color:#8b1e1e;padding:20px;border:2px solid #c33;border-radius:10px;overflow:auto;font:14px/1.5 Arial"><h2>Erro ao carregar o sistema</h2><pre id="startupError" style="white-space:pre-wrap"></pre></div>');
+document.getElementById('startupError').textContent=err.stack||err.message||String(err);
+}
+</script>
+</body>
+</html>
